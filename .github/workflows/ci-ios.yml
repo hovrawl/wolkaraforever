@@ -1,0 +1,57 @@
+name: CI (iOS build on macOS)
+
+# Builds the unsigned External JIT .ipa on every push and pull request so it can be
+# downloaded and sideloaded (for example from a Windows PC with SideStore or Sideloadly).
+# The tagged-release workflow in release.yml is unchanged.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Repository checks
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+      - run: wolkaraforever/tools/check_docs.sh
+      - run: wolkaraforever/tools/check_layers.sh
+      - run: python3 wolkaraforever/tools/check_localization.py
+
+  ipa:
+    name: Unsigned .ipa
+    runs-on: macos-26
+    needs: checks
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Build the unsigned .ipa
+        # Published artifact, so nothing exported from the runner's macOS goes in.
+        run: TOLKARA_SYSTEM_ROOTS=NO wolkaraforever/tools/package_ipa.sh Tolkara-unsigned.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tolkara-unsigned-ipa
+          path: Tolkara-unsigned.ipa
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Keep the build log if it failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: logs/
+          retention-days: 7
+          if-no-files-found: ignore
