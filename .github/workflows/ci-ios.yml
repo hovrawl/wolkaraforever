@@ -51,7 +51,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: Tolkara-unsigned-ipa
-          path: Tolkara-unsigned.ipa
+          path: build/platform/Tolkara-unsigned.ipa
           retention-days: 14
           if-no-files-found: error
 
@@ -60,6 +60,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-log
-          path: logs/
+          path: |
+            logs/
+            build/platform/logs/
           retention-days: 7
           if-no-files-found: ignore
