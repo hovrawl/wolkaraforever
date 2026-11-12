@@ -22,6 +22,14 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Fetch the pinned upstream (check_layers.sh needs upstream/main)
+        run: |
+          git remote add upstream https://github.com/tolkara/tolkara.git
+          git fetch --quiet upstream
       - run: wolkaraforever/tools/check_docs.sh
       - run: wolkaraforever/tools/check_layers.sh
       - run: python3 wolkaraforever/tools/check_localization.py
