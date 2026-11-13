@@ -27,9 +27,15 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
       - name: Fetch the pinned upstream (check_layers.sh needs upstream/main)
+        # The commit vendored into platform/ is recorded by git subtree; check against
+        # exactly that, so a newer upstream commit cannot turn CI red.
         run: |
+          pin=$(git log --grep='^git-subtree-dir: platform$' -n 1 --format=%B | sed -n 's/^git-subtree-split: //p')
+          test -n "$pin" || { echo "no git-subtree-split recorded for platform/"; exit 1; }
+          echo "Pinned upstream: $pin"
           git remote add upstream https://github.com/tolkara/tolkara.git
-          git fetch --quiet upstream
+          git fetch --quiet upstream "$pin"
+          git update-ref refs/remotes/upstream/main "$pin"
       - run: wolkaraforever/tools/check_docs.sh
       - run: wolkaraforever/tools/check_layers.sh
       - run: python3 wolkaraforever/tools/check_localization.py
